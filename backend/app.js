@@ -33,13 +33,12 @@ async function isEmailValid(email) {
 }
 
 app.use(
-	cors({
-		origin: "https://main--dreamy-faloodeh-419cf4.netlify.app",
-		methods: "GET,POST,PUT,DELETE,PATCH",
-		credentials: true,
-	})
+  cors({
+    origin: "*",
+    methods: "GET,POST,PUT,DELETE,PATCH",
+    credentials: true,
+  })
 );
-
 
 
 const jwt = require("jsonwebtoken");
