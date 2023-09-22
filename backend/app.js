@@ -119,7 +119,7 @@ app.post("/register", async (req, res) => {
     .json({ msg: "The password needs to be at least 5 characters long." });
      const {valid, reason, validators} = await isEmailValid(email);
     if (!valid){
-    return res.send({ code:400,
+    return res.send({ code:401,
       message: "Please provide a valid email address.",
     })
    } 
