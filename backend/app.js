@@ -121,12 +121,8 @@ app.post("/register", async (req, res) => {
     if (!valid){
     return res.send({ code:400,
       message: "Please provide a valid email address.",
-      reason: validators[reason].reason
     })
-   } else if (valid){
-    return res.send
-    ({code:200, msg: "User signed up" });
-    }
+   } 
     const existingUser = await User.findOne({ email: email });
     if (existingUser) {
     return res.send
