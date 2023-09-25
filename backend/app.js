@@ -955,18 +955,22 @@ app.post('/api/download-image', async (req, res) => {
     });
 
     const imageName = `${uuidv4()}.png`;
-    const imagePath = path.join(__dirname, 'downloads', imageName); // Modify the path to your desired directory for storing downloaded images
+    const imagePath = path.join(__dirname, 'downloads', imageName);
 
     const writer = fs.createWriteStream(imagePath);
     response.data.pipe(writer);
 
     writer.on('finish', () => {
+      // Set the Content-Type header to indicate the image format (e.g., PNG)
+      res.header('Content-Type', 'image/png');
+      
+      // Send the image as a response
       res.download(imagePath, imageName, (error) => {
         if (error) {
           console.error('Error downloading image:', error);
           res.status(500).json({ error: 'Something went wrong' });
         }
-        // Delete the downloaded image file
+ 
         fs.unlinkSync(imagePath);
       });
     });
