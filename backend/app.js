@@ -67,7 +67,37 @@ mongoose
  
 const User = mongoose.model("users");
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'societeguis@gmail.com', 
+    pass: 'daol mjre mvje wltw', 
+  },
+});
 
+// Function to send a verification email
+function sendVerificationEmail(email) {
+  // Generate a verification token with the user's email
+  const token = jwt.sign({ data: email }, 'secret', { expiresIn: '10m' });
+
+  // Email configurations
+  const mailConfigurations = {
+    from: 'societeguis@gmail.com',
+    to: email,
+    subject: 'Email Verification',
+    text: `Hi! There, You have recently visited our website and entered your email. Please follow the given link to verify your email: http://localhost:5000/verify/${token} Thanks`,
+  };
+
+  // Send the verification email
+  transporter.sendMail(mailConfigurations, function (error, info) {
+    if (error) {
+      console.error('Email could not be sent:', error);
+    } else {
+      console.log('Email Sent Successfully');
+      console.log(info);
+    }
+  });
+}
 async function getAiResponse(prompt) {
   const openai = new OpenAIApi(configuration);
   const completion = await openai.createCompletion({
@@ -80,7 +110,28 @@ async function getAiResponse(prompt) {
   });
   console.log(completion.data.choices[0].text);
 }
+app.get("/verify/:token", async (req, res) => {
+  const { token } = req.params;
 
+  try {
+    const decoded = jwt.verify(token, 'secret');
+    const user = await User.findOne({ email: decoded.data });
+
+    if (!user) {
+      return res.status(404).send('User not found.');
+    }
+
+    // Mark the user's email as verified
+    user.verified = true;
+    await user.save();
+
+    // Send a success message
+    return res.send('Email verified successfully');
+  } catch (error) {
+    // Handle token verification errors
+    return res.status(400).send('Invalid or expired token.');
+  }
+});
 app.post('/chatgpt', async (req, res) => {
   const prompt = req.body.prompt;
   try {
@@ -105,6 +156,7 @@ app.post('/chatgpt', async (req, res) => {
 
 app.post("/register", async (req, res) => {
   try {
+    
     const { errors, isValid } = validateRegisterInput(req.body);
     if (!isValid) {
       return res.status(400).json(errors);
@@ -117,14 +169,6 @@ app.post("/register", async (req, res) => {
     return res
     .status(402)
     .json({ msg: "The password needs to be at least 5 characters long." });
-     const {valid, reason, validators} = await isEmailValid(email);
-    if (!valid){
-    return res.send({ code:401,
-      message: "Please provide a valid email address.",
-      reason: validators[reason].reason
-                     
-    })
-   } 
     const existingUser = await User.findOne({ email: email });
     if (existingUser) {
     return res.send
@@ -139,11 +183,16 @@ app.post("/register", async (req, res) => {
     pic,
     coverpic,
     bio,
+    verified: false, 
   
     });
     const savedUser = await newUser.save();
-      return res.send
-    ({code:200, msg: "User signed up" });
+    const token = jwt.sign({ email: email }, process.env.JWT_SECRET, {
+      expiresIn: '10m', // Token expires in 10 minutes (adjust as needed)
+    });
+    sendVerificationEmail(email, token);
+
+    return res.send({ code: 200, msg: "Please check your email for confirmation." });
     }
     } catch (err) {
     res.status(500).json({ error: err.message });
@@ -166,6 +215,10 @@ app.post("/login-user", async (req, res) => {
     const user = await User.findOne({ email: email, password: password });
     if (!user)
      return res.send({code:400, msg: "Invalid credentials." });
+     if (!user.verified) {
+      return res.send({ code: 403, msg: "Account not verified." });
+    }
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
     res.send({
     code : 200,
