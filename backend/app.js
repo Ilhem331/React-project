@@ -85,7 +85,7 @@ function sendVerificationEmail(email) {
     from: 'societeguis@gmail.com',
     to: email,
     subject: 'Email Verification',
-    text: `Hi! There, You have recently visited our website and entered your email. Please follow the given link to verify your email: http://localhost:5000/verify/${token} Thanks`,
+    text: `Hi! There, You have recently visited our website and entered your email. Please follow the given link to verify your email: https://react-nwgw.onrender.com/verify/${token} Thanks`,
   };
 
   // Send the verification email
